@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-Wall
 
-all: arbitro
+all: clean arbitro
 
 arbitro: arbitro.c
 	$(CC) $(CFLAGS) -o arbitro arbitro.c
