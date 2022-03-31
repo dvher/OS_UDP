@@ -8,33 +8,10 @@
 #include <sys/wait.h>
 
 // Return id of the winner
-int check_winner(int player1, int player2) {
-    // 1 -> Rock
-    // 2 -> Paper
-    // 3 -> Scissors
-    if(player1 == player2) return 0;
-
-    if(player1 == 1 && player2 == 2) return 2;
-    if(player1 == 1 && player2 == 3) return 1;
-
-    if(player1 == 2 && player2 == 1) return 1;
-    if(player1 == 2 && player2 == 3) return 2;
-
-    if(player1 == 3 && player2 == 1) return 2;
-    if(player1 == 3 && player2 == 2) return 1;
-
-    return 0;
-}
+int check_winner(int, int);
 
 // Return the choice played as a word
-char *get_player_choice(int choice) {
-    switch(choice) {
-        case 1: return "Piedra";
-        case 2: return "Papel";
-        case 3: return "Tijeras";
-        default: return "Invalid choice";
-    }
-}
+char *get_player_choice(int);
 
 int main(void) {
     // Get the pid of the parent process
@@ -68,9 +45,7 @@ int main(void) {
     }
     // Store players' PIDs
     jugadores[0] = fork();
-    jugadores[1] = jugadores[0] ? fork() : 0;
-    srand(getpid());
-    // Main loop
+    jugadores[1] = jugadores[0] ? fork() : 0;    // Main loop
     while(continue_game) {
         if (jugadores[0] && jugadores[1]) {
             // Close pipes
@@ -121,6 +96,7 @@ int main(void) {
                 jugadores[loser - 1] = fork();
             }
         }else {
+            srand(time(NULL) % getpid());
             int choice = rand() % 3 + 1;
             // Close pipes
             if(fds[0][0]) {
@@ -143,4 +119,31 @@ int main(void) {
     }
     printf("Fin del juego.\n");
     return 0;
+}
+
+int check_winner(int player1, int player2) {
+    // 1 -> Rock
+    // 2 -> Paper
+    // 3 -> Scissors
+    if(player1 == player2) return 0;
+
+    if(player1 == 1 && player2 == 2) return 2;
+    if(player1 == 1 && player2 == 3) return 1;
+
+    if(player1 == 2 && player2 == 1) return 1;
+    if(player1 == 2 && player2 == 3) return 2;
+
+    if(player1 == 3 && player2 == 1) return 2;
+    if(player1 == 3 && player2 == 2) return 1;
+
+    return 0;
+}
+
+char *get_player_choice(int choice) {
+    switch(choice) {
+        case 1: return "Piedra";
+        case 2: return "Papel";
+        case 3: return "Tijeras";
+        default: return "Invalid choice";
+    }
 }
