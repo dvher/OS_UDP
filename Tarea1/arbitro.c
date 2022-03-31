@@ -5,7 +5,9 @@
 #include <string.h>
 #include <time.h>
 #include <signal.h>
+#include <sys/wait.h>
 
+// Return id of the winner
 int check_winner(int player1, int player2) {
     // 1 -> Rock
     // 2 -> Paper
@@ -24,6 +26,7 @@ int check_winner(int player1, int player2) {
     return 0;
 }
 
+// Return the choice played as a word
 char *get_player_choice(int choice) {
     switch(choice) {
         case 1: return "Piedra";
@@ -98,7 +101,7 @@ int main(void) {
                 printf("\nEl ganador es %s!\n", nombre_jugadores[winner - 1]);
                 // Kill loser player
                 close(fds[loser - 1][0]);
-                kill(jugadores[loser - 1], SIGTERM);
+                kill(jugadores[loser - 1], SIGINT);
                 kill(jugadores[winner - 1], SIGCONT);
                 jugadores[loser - 1] = 0;
             }
@@ -108,8 +111,9 @@ int main(void) {
             if(!continue_game) {
                 close(fds[0][0]);
                 close(fds[1][0]);
-                kill(jugadores[0], SIGTERM);
-                kill(jugadores[1], SIGTERM);
+                kill(jugadores[0], SIGINT);
+                kill(jugadores[1], SIGINT);
+                printf("\nGracias por participar!\n");
             }
             // Restart players
             if(winner) {
