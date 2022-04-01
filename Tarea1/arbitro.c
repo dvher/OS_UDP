@@ -29,7 +29,7 @@ int main(void) {
     // Create boolean to check if the user no longer wants to keep playing
     int continue_game = 1;
 
-    printf("Bienvenido al campeonado de Cachipún!\n");
+    printf("Bienvenido al campeonato de Cachipún!\n");
     printf("Hoy el árbitro será Juan, también conocido por su id %d!\n\n", pid);
 
     // Request players' names
@@ -86,9 +86,14 @@ int main(void) {
             if(!continue_game) {
                 close(fds[0][0]);
                 close(fds[1][0]);
-                kill(jugadores[0], SIGINT);
-                kill(jugadores[1], SIGINT);
+                if(!jugadores[0]) kill(jugadores[1], SIGINT);
+                else if(!jugadores[1]) kill(jugadores[0], SIGINT);
+                else {
+                    kill(jugadores[0], SIGINT);
+                    kill(jugadores[1], SIGINT);
+                }
                 printf("\nGracias por participar!\n");
+                break;
             }
             // Restart players
             if(winner) {
