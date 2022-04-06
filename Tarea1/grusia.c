@@ -10,9 +10,6 @@
 // Waiting time between searches
 #define SLEEP_TIME 500000
 
-// Define the number of posibilities to not find Zulensky
-#define PROB_DENOMINATOR 50
-
 // Function to clean an array of PIDs
 void clean_array(pid_t[], int);
 // Function to check if the process is the parent
@@ -31,6 +28,8 @@ int main(void) {
     scanf("%d", &n);
     // Array containing all possible locations of Zulensky
     pid_t possible_locations[n];
+    // Create variable for Zulensky's location
+    int location = rand() % n;
     // Fill array with zeros
     clean_array(possible_locations, n);
     // Create n subprocesses
@@ -42,8 +41,7 @@ int main(void) {
         int j = 0;
         while(!found && isParent(possible_locations, n)) {
             printf("\nBuscando en locación %d...\n", possible_locations[j]);
-            int guess = rand() % PROB_DENOMINATOR;
-            if(!guess) {
+            if(j == location) {
                found = 1;
                printf("Zulensky ha sido encontrado.\n");
                printf("Eliminando el resto de locaciones de la lista...\n");

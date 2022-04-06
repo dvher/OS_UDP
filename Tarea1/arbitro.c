@@ -5,7 +5,6 @@
 #include <string.h>
 #include <time.h>
 #include <signal.h>
-#include <sys/wait.h>
 
 // Return id of the winner
 int check_winner(int, int);
@@ -101,7 +100,7 @@ int main(void) {
                 jugadores[loser - 1] = fork();
             }
         }else {
-            srand(time(NULL) % getpid());
+            srand(getpid());
             int choice = rand() % 3 + 1;
             // Close pipes
             if(fds[0][0]) {
