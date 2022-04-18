@@ -36,29 +36,39 @@ int main(void) {
     possible_locations[0] = fork();
     for(i = 1; i < n; i++) possible_locations[i] = possible_locations[i - 1] ? fork() : 0;
     
+    // If current process is parent
     if(isParent(possible_locations, n)) {
+        int j;
         int found = 0;
-        int j = 0;
+        // While Zulensky isn't found, keep iterating through the array
+        // Multiple conditions are made to be sure that a child process won't access it from the inside.
         while(!found && isParent(possible_locations, n)) {
+            j = rand() % n;
             printf("\nBuscando en locación %d...\n", possible_locations[j]);
             if(j == location) {
                found = 1;
                printf("Zulensky ha sido encontrado.\n");
                printf("Eliminando el resto de locaciones de la lista...\n");
+               // Kill Zulensky's location
                kill(possible_locations[j], SIGKILL);
+               // Allow all subprocesses to stop running on their own
                resumeProcess(possible_locations, n, j);
             } else {
-               kill(possible_locations[j], SIGINT);
+               // Allow the process to keep living and get it out of the array
+               kill(possible_locations[j], SIGCONT);
                possible_locations[j] = 0;
                printf("Zulensky no se encontraba en esta locación, relocalizando...\n");
+               // Sleep until time is done to keep searching
                usleep(SLEEP_TIME);
+               // Crete a new process for a possible new location
                possible_locations[j] = fork();
                if(!possible_locations[j]) kill(getpid(), SIGSTOP);
             }
-            j = (j + 1) % n;
         }
+        // Wait  until every child is finished to stop running
         wait(NULL);
     } else
+        // If the process is child, stop running until called for
         kill(getpid(), SIGSTOP);
     return 0;
 }
