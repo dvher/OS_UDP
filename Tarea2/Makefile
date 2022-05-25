@@ -10,4 +10,4 @@ pergaminos: pergaminos.c
 	$(CC) $(CFLAGS) -o pergaminos.exe pergaminos.c
 
 clean:
-	rm -f sesiones.exe pergaminos.exe
+	rm -f sesiones.exe pergaminos.exe out_schedule.txt

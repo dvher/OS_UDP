@@ -33,7 +33,7 @@ void clearClasses(int);
 // Handle signals to avoid memory leaks, still may be possible with SIGKILL
 void sigHandler(int);
 // Handle exit to clear up residual memory
-void exitHandler(int, void *);
+void exitHandler(void);
 // Calculate deadline based on day and hour
 int calculateDeadline(asignatura *);
 // Sort classes by deadline
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
     signal(SIGTERM, sigHandler);
     signal(SIGQUIT, sigHandler);
     signal(SIGSEGV, sigHandler);
-    on_exit(exitHandler, NULL);
+    atexit(exitHandler);
 
     if(argc != 2) {
         fprintf(stderr, "Usage: %s <quantum>.\n", argv[0]);
@@ -185,11 +185,8 @@ void sigHandler(int sig) {
     exit(sig);
 }
 
-void exitHandler(int status, void *arg) {
-    if(arg != NULL) {
-        printf("Argument: %p\n", arg);
-    }
-    printf("\nExiting with status %d\n", status);
+void exitHandler(void) {
+    printf("\nExiting...\n");
     clearClasses(-1);
 
 }
@@ -212,10 +209,6 @@ void sortClassesByDeadline(void) {
                 datos_asignaturas[j+1] = aux;
             }
         }
-    }
-
-    for(i = 0; i < length_classes; i++) {
-        printf("%s\n", datos_asignaturas[i]->nombre);
     }
 
 }

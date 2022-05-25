@@ -33,7 +33,7 @@ void *reader(void *);
 // Handle signals to free memory
 void sigHandler(int);
 // Handle exits to free memory
-void exitHandler(int, void *);
+void exitHandler(void);
 // Writers' function
 void *writer1(void *);
 void *writer2(void *);
@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
     signal(SIGTERM, sigHandler);
     signal(SIGQUIT, sigHandler);
     signal(SIGSEGV, sigHandler);
-    on_exit(exitHandler, NULL);
+    atexit(exitHandler);
 
     if(argc != 2) {
         fprintf(stderr, "Usage %s <num_readers>\n", argv[0]);
@@ -129,13 +129,11 @@ void sigHandler(int sig) {
     exit(sig);
 }
 
-void exitHandler(int status, void *arg) {
-    if(arg != NULL)
-        printf("%p\n", arg);
+void exitHandler(void) {
     if(readers != NULL)
         free(readers);
     sem_destroy(&students);
-    printf("\nReceived status %d, cleaning...\n", status);
+    printf("\nCleaning and exiting...\n");
 }
 
 void *writer1(void *arg) {
