@@ -1,8 +1,20 @@
+
+/* 
+* Pregunta 1:
+* En el caso que el total:
+*
+* Sume menos -> Se logran estudiar todos los temas para las solemnes con mucho tiempo de sobra.
+* Sume igual -> Se logran estudiar todos los temas para las solemnes sin tiempo de sobra.
+* Sume mas -> Va a haber almenos una asignatura que no se alcanzara a estudiar por completo antes de la solmne.  
+*
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <signal.h>
+#include <string.h>
 
 // Store all data for a class
 typedef struct {
@@ -26,15 +38,24 @@ void exitHandler(int, void *);
 int calculateDeadline(asignatura *);
 // Sort classes by deadline
 void sortClassesByDeadline(void);
+// Create schedule
+void *createSchedule(void *);
+// Clean array
+void cleanArray(void);
+// Print schedule
+void printSchedule(void);
+// Check for hours of study that couldn't be made
+int checkMissing(void);
 
 // Store all classes along with their data
 asignatura **datos_asignaturas;
 int length_classes = 0;
+// Quantum for Round Robin algorithm
+int quantum;
+// Name of classes in the schedule
+char schedule[7][24][64];
 
-int main(void) {
-
-    // Loop variable (C99)
-    int i;
+int main(int argc, char *argv[]) {
 
     // Handle signals and exit
     signal(SIGINT, sigHandler);
@@ -42,6 +63,16 @@ int main(void) {
     signal(SIGQUIT, sigHandler);
     signal(SIGSEGV, sigHandler);
     on_exit(exitHandler, NULL);
+
+    if(argc != 2) {
+        fprintf(stderr, "Usage: %s <quantum>.\n", argv[0]);
+        exit(1);
+    }
+
+    quantum = atoi(argv[1]);
+
+    // Loop variable (C99)
+    int i;
 
     printf("Ingrese la cantidad de asignaturas: ");
     scanf("%d", &length_classes);
@@ -68,6 +99,14 @@ int main(void) {
 
     }
 
+    sortClassesByDeadline();
+
+    pthread_t scheduler;
+    pthread_create(&scheduler, NULL, createSchedule, NULL);
+    pthread_join(scheduler, NULL);
+
+    printSchedule();
+
     clearClasses(-1);
 
     return 0;
@@ -85,14 +124,14 @@ void *addToSchedule(void *class) {
     printf("\n");
 
     printf("Ingrese el nombre de la asignatura: ");
-    fgets(datos_asignaturas[i]->nombre, 63, stdin);
+    fgets(datos_asignaturas[i]->nombre, 64, stdin);
 
     //Clear input
-    while(getchar() != '\n'){
-        printf("Logrado.\n");
-    };
-
-    exit(10);
+    char *searchLF = strchr(datos_asignaturas[i]->nombre, '\n');
+    if(!searchLF)
+        while(getchar() != '\n');
+    else
+        *searchLF = '\0';
 
     printf("Ingrese la duración total (en horas) del estudio semanal de la asignatura: ");
     scanf("%d", &datos_asignaturas[i]->hora_duracion);
@@ -166,7 +205,7 @@ void sortClassesByDeadline(void) {
     int i, j;
 
     for(i = 0; i < length_classes; i++) {
-        for(j = 0; i < length_classes - i - 1; j++) {
+        for(j = 0; j < length_classes - i - 1; j++) {
             if(calculateDeadline(datos_asignaturas[j]) > calculateDeadline(datos_asignaturas[j+1])) {
                 asignatura *aux = datos_asignaturas[j];
                 datos_asignaturas[j] = datos_asignaturas[j+1];
@@ -175,4 +214,61 @@ void sortClassesByDeadline(void) {
         }
     }
 
+    for(i = 0; i < length_classes; i++) {
+        printf("%s\n", datos_asignaturas[i]->nombre);
+    }
+
+}
+
+void *createSchedule(void *args) {
+    int i, j, k, l = 0;
+    // Go through array
+    for(i = 0; i < 7; i++) {
+        for(j = 0; j < 24; j++) {
+            // Repeat as many times as quantum
+            for(k = 0; k < quantum; k++) {
+                int m;
+                // If current class has no more hours, skip
+                for(m = 0; m < length_classes && datos_asignaturas[l]->hora_duracion <= 0; m++, l = (l + 1) % length_classes);
+                if(!datos_asignaturas[l]->hora_duracion)
+                    break;
+                strncpy(schedule[i][j + k], datos_asignaturas[l]->nombre, 64);
+                datos_asignaturas[l]->hora_duracion--;
+            }
+            if(k) {
+                j += k - 1;
+            }
+            l = (l + 1) % length_classes;
+        }
+    }
+    return args;
+}
+
+void printSchedule(void) {
+    int i, j;
+    FILE *fd = fopen("./out_schedule.txt", "w");
+    const char dias[7][10] = {"MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"};
+    for(i = 0; i < 7; i++) {
+        fprintf(fd, "------ %s ------\n", dias[i]);
+        for(j = 0; j < 24; j++)
+            fprintf(fd, "%3d %s\t- %s\n", j , j < 12 ? "AM" : "PM", schedule[i][j]);
+    }
+    if(checkMissing()){
+        fprintf(fd, "------ HORAS FALTANTES ------\n");
+        for(i = 0; i < length_classes; i++) {
+            if(!datos_asignaturas[i]->hora_duracion)
+                continue;
+            fprintf(fd, "\t%s: %d horas\n", datos_asignaturas[i]->nombre, datos_asignaturas[i]->hora_duracion);
+        }
+    }
+    fclose(fd);
+}
+
+int checkMissing(void) {
+    int i;
+    for(i = 0; i < length_classes; i++) {
+        if(datos_asignaturas[i]->hora_duracion)
+            return 1;
+    }
+    return 0;
 }
